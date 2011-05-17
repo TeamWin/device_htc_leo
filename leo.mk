@@ -39,7 +39,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.ril.hsdpa.category=8 \
     ro.ril.hsupa.category=5 \
     ro.ril.hsxpa=2 \
-    mobiledata.interfaces=rmnet0,rmnet1,rmnet2,ppp \
+    mobiledata.interfaces=rmnet0,rmnet1,rmnet2,ppp0 \
     wifi.interface=eth0 \
     wifi.supplicant_scan_interval=15
 
