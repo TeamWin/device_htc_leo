@@ -38,20 +38,14 @@
 
 #define  LOG_TAG  "gps_leo_rpc"
 
+#define  MEASUREMENT_PRECISION  5.0f // in meters
+#define  DUMP_DATA  0
 #define  GPS_DEBUG  0
 
 #if GPS_DEBUG
 #  define  D(...)   LOGD(__VA_ARGS__)
 #else
 #  define  D(...)   ((void)0)
-#endif
-
-#define  RPC_DEBUG  0
-
-#if RPC_DEBUG
-#  define  DD(...)   LOGD(__VA_ARGS__)
-#else
-#  define  DD(...)   ((void)0)
 #endif
 
 typedef struct registered_server_struct {
@@ -92,6 +86,7 @@ struct SVCXPRT {
 static uint32_t client_IDs[16];//highest known value is 0xb
 static uint32_t can_send=1; //To prevent from sending get_position when EVENT_END hasn't been received
 static uint32_t has_fix=0;
+static uint32_t use_nmea=1;
 static struct CLIENT *_clnt;
 static struct timeval timeout;
 
@@ -134,7 +129,7 @@ static bool_t xdr_result_int(XDR *clnt, uint32_t *result) {
 }
 
 static bool_t xdr_xtra_data_args(XDR *xdrs, struct xtra_data_params *xtra_data) {
-    DD("%s() is called: 0x%x, %d, %d, %d", __FUNCTION__, (int) xtra_data->xtra_data_ptr, xtra_data->part_len, xtra_data->part, xtra_data->total_parts);
+    //D("%s() is called: 0x%x, %d, %d, %d", __FUNCTION__, (int) xtra_data->xtra_data_ptr, xtra_data->part_len, xtra_data->part, xtra_data->total_parts);
 
     if (!xdr_u_long(xdrs, &xtra_data->data[0]))
         return 0;
@@ -157,7 +152,7 @@ static bool_t xdr_xtra_data_args(XDR *xdrs, struct xtra_data_params *xtra_data) 
 }
 
 bool_t xdr_pdsm_xtra_time_info(XDR *xdrs, pdsm_xtra_time_info_type *time_info_ptr) {
-    DD("%s() is called: %d, %d", __FUNCTION__, (int) time_info_ptr->time_utc, (int) time_info_ptr->uncertainty);
+    //D("%s() is called: %lld, %d", __FUNCTION__, time_info_ptr->time_utc, time_info_ptr->uncertainty);
 
     if (!xdr_u_quad_t(xdrs, &time_info_ptr->time_utc))
         return 0;
@@ -172,7 +167,7 @@ bool_t xdr_pdsm_xtra_time_info(XDR *xdrs, pdsm_xtra_time_info_type *time_info_pt
 }
 
 static bool_t xdr_xtra_time_args(XDR *xdrs, struct xtra_time_params *xtra_time) {
-    DD("%s() is called", __FUNCTION__);
+    //D("%s() is called", __FUNCTION__);
 
     if (!xdr_u_long(xdrs, &xtra_time->data[0]))
         return 0;
@@ -377,7 +372,7 @@ int pdsm_xtra_set_data(struct CLIENT *clnt, int val0, int client_ID, int val2, u
             (caddr_t) &xtra_data,
             (xdrproc_t) xdr_result_int,
             (caddr_t) &res, timeout);
-    D("%s() is called: clnt_stat=%d", __FUNCTION__, cs);
+    //D("%s() is called: clnt_stat=%d", __FUNCTION__, cs);
     if (cs != RPC_SUCCESS){
         D("pdsm_xtra_set_data(%x, %x, %d, 0x%x, %d, %d, %d, %d) failed\n", val0, client_ID, val2, (int) xtra_data_ptr, part_len, part, total_parts, val3);
         free(xtra_data.data);
@@ -402,13 +397,13 @@ int pdsm_xtra_inject_time_info(struct CLIENT *clnt, int val0, int client_ID, int
             (caddr_t) &xtra_time,
             (xdrproc_t) xdr_result_int,
             (caddr_t) &res, timeout);
-    DD("%s() is called: clnt_stat=%d", __FUNCTION__, cs);
+    //D("%s() is called: clnt_stat=%d", __FUNCTION__, cs);
     if (cs != RPC_SUCCESS){
-        D("pdsm_xtra_inject_time_info(%x, %x, %d, %d, %d) failed\n", val0, client_ID, val2, (int) time_info_ptr->time_utc, (int) time_info_ptr->uncertainty);
+        D("pdsm_xtra_inject_time_info(%x, %x, %d, %lld, %d) failed\n", val0, client_ID, val2, time_info_ptr->time_utc, time_info_ptr->uncertainty);
         free(xtra_time.data);
         exit(-1);
     }
-    D("pdsm_xtra_inject_time_info(%x, %x, %d, %d, %d)=%d\n", val0, client_ID, val2, (int) time_info_ptr->time_utc, (int) time_info_ptr->uncertainty, res);
+    D("pdsm_xtra_inject_time_info(%x, %x, %d, %lld, %d)=%d\n", val0, client_ID, val2, time_info_ptr->time_utc, time_info_ptr->uncertainty, res);
     free(xtra_time.data);
     return res;
 }
@@ -501,24 +496,26 @@ void dispatch_pdsm_pd(uint32_t *data) {
     fix.flags = 0;
     if(event&PDSM_PD_EVENT_POSITION) {
         D("PDSM_PD_EVENT_POSITION");
+        if (use_nmea) return;
 
         GpsSvStatus ret;
         int i;
         ret.num_svs=ntohl(data[82]) & 0x1F;
 
-        // debugged by tytung
-        //DD("pd %3d: %08x ", 77, ntohl(data[77]));
+#if DUMP_DATA
+        //D("pd %3d: %08x ", 77, ntohl(data[77]));
         for(i=60;i<83;++i) {
-            DD("pd %3d: %08x ", i, ntohl(data[i]));
+            D("pd %3d: %08x ", i, ntohl(data[i]));
         }
         for(i=83;i<83+3*(ret.num_svs-1)+3;++i) {
-            DD("pd %3d: %d ", i, ntohl(data[i]));
+            D("pd %3d: %d ", i, ntohl(data[i]));
         }
-        
+#endif
+
         for(i=0;i<ret.num_svs;++i) {
             ret.sv_list[i].prn=ntohl(data[83+3*i]);
             ret.sv_list[i].elevation=ntohl(data[83+3*i+1]);
-            ret.sv_list[i].azimuth=ntohl(data[83+3*i+2])/100;
+            ret.sv_list[i].azimuth=(float)ntohl(data[83+3*i+2])/100.0f;
             ret.sv_list[i].snr=ntohl(data[83+3*i+2])%100;
         }
         ret.used_in_fix_mask=ntohl(data[77]);
@@ -537,7 +534,7 @@ void dispatch_pdsm_pd(uint32_t *data) {
 
         if (ntohl(data[75])) {
             fix.flags |= GPS_LOCATION_HAS_ACCURACY;
-            fix.accuracy = (float)ntohl(data[75]) / 10.0f * 2.5; // Measurement Precision = 2.5
+            fix.accuracy = (float)ntohl(data[75]) / 10.0f * MEASUREMENT_PRECISION;
         }
 
         union {
@@ -558,6 +555,7 @@ void dispatch_pdsm_pd(uint32_t *data) {
     if (event&PDSM_PD_EVENT_VELOCITY)
     {
         D("PDSM_PD_EVENT_VELOCITY");
+        if (use_nmea) return;
         fix.flags |= GPS_LOCATION_HAS_SPEED|GPS_LOCATION_HAS_BEARING;
         fix.speed = (float)ntohl(data[66]) / 10.0f / 3.6f; // convert kp/h to m/s
         fix.bearing = (float)ntohl(data[67]) / 10.0f;
@@ -565,6 +563,7 @@ void dispatch_pdsm_pd(uint32_t *data) {
     if (event&PDSM_PD_EVENT_HEIGHT)
     {
         D("PDSM_PD_EVENT_HEIGHT");
+        if (use_nmea) return;
         fix.flags |= GPS_LOCATION_HAS_ALTITUDE;
         fix.altitude = (double)ntohl(data[64]) / 10.0f;
     }
@@ -587,18 +586,21 @@ void dispatch_pdsm_ext(uint32_t *data) {
     GpsSvStatus ret;
     int i;
 
+    if (use_nmea) return;
     if (has_fix) return;
     
     ret.num_svs=ntohl(data[8]);
     D("%s() is called. num_svs=%d", __FUNCTION__, ret.num_svs);
-    // debugged by tytung
+
+#if DUMP_DATA
     for(i=0;i<12;++i) {
-        DD("e %3d: %08x ", i, ntohl(data[i]));
+        D("e %3d: %08x ", i, ntohl(data[i]));
     }
     for(i=101;i<101+12*(ret.num_svs-1)+6;++i) {
-        DD("e %3d: %d ", i, ntohl(data[i]));
+        D("e %3d: %d ", i, ntohl(data[i]));
     }
-    
+#endif
+
     for(i=0;i<ret.num_svs;++i) {
         ret.sv_list[i].prn=ntohl(data[101+12*i+1]);
         ret.sv_list[i].elevation=ntohl(data[101+12*i+5]);
@@ -682,8 +684,8 @@ int init_leo()
     xprt_register(svc);
     svc_register(svc, 0x3100005b, 0x00010001, (__dispatch_fn_t)dispatch, 0);
     svc_register(svc, 0x3100005b, 0, (__dispatch_fn_t)dispatch, 0);
-    svc_register(svc, 0x3100001d, 0x00010001 /*xb93145f7*/, (__dispatch_fn_t)dispatch, 0);
-    svc_register(svc, 0x3100001d, 0 /*xb93145f7*/, (__dispatch_fn_t)dispatch, 0);
+    svc_register(svc, 0x3100001d, 0x00010001, (__dispatch_fn_t)dispatch, 0);
+    svc_register(svc, 0x3100001d, 0, (__dispatch_fn_t)dispatch, 0);
     if(!clnt) {
         D("Failed creating client\n");
         return -1;
@@ -696,8 +698,8 @@ int init_leo()
     // PDA
     pdsm_client_init(clnt, 2);
     pdsm_client_pd_reg(clnt, 2, 0, 0, 0, 0xF3F0FFFF, 0);
-    pdsm_client_pa_reg(clnt, 2, 0, 2, 0, 0x7ffefe0, 0);
-    pdsm_client_ext_status_reg(clnt, 2, 0, 0, 0, 0x4, 0);
+    pdsm_client_pa_reg(clnt, 2, 0, 2, 0, 0x7FFEFE0, 0);
+    pdsm_client_ext_status_reg(clnt, 2, 0, 1, 0, 4, 0);
     pdsm_client_act(clnt, 2);
 
     // XTRA
@@ -709,7 +711,7 @@ int init_leo()
 
     // NI
     pdsm_client_init(clnt, 4);
-    pdsm_client_lcs_reg(clnt, 4, 0,0,0,0x3f0, 0);
+    pdsm_client_lcs_reg(clnt, 4, 0, 7, 0, 0x3F0, 0);
     pdsm_client_act(clnt, 4);
 
     return 0;
@@ -728,26 +730,27 @@ int gps_xtra_set_data(unsigned char *xtra_data_ptr, uint32_t part_len, uint8_t p
     return res;
 }
 
+extern int64_t elapsed_realtime();
+
 int gps_xtra_inject_time_info(GpsUtcTime time, int64_t timeReference, int uncertainty)
 {
     uint32_t res = -1;
     pdsm_xtra_time_info_type time_info_ptr;
     time_info_ptr.uncertainty = uncertainty;
     time_info_ptr.time_utc = time;
-    //FIXME
-    //time_info_ptr.time_utc += (int64_t)(android::elapsedRealtime() - timeReference);
+    time_info_ptr.time_utc += (int64_t)(elapsed_realtime() - timeReference);
     time_info_ptr.ref_to_utc_time = 1;
-    time_info_ptr.force_flag = 0;
+    time_info_ptr.force_flag = 1;
     res = pdsm_xtra_inject_time_info(_clnt, 0, client_IDs[0xb], 0, &time_info_ptr);
     return res;
 }
 
 void gps_get_position() 
 {
-    D("%s() is called. can_send=%d", __FUNCTION__, can_send);
+    D("%s() is called", __FUNCTION__);
     int i;
     for(i = 3; i; --i) if(!can_send) sleep(1);//Time out of 3 seconds on can_send
-    can_send = 0;
+    D("%s() is called. can_send=%d", __FUNCTION__, can_send);
     pdsm_get_position(_clnt, 
             2, 0,           
             1,              
@@ -761,6 +764,7 @@ void gps_get_position()
        0, 0, 0, 0, 0,       
        1, 50, 2,
        client_IDs[2]);
+    can_send = 0;
 }
 
 void exit_gps_rpc() 
