@@ -1,6 +1,6 @@
 LOCAL_PATH:= $(call my-dir)
 
-ifneq ($(TARGET_SIMULATOR,true))
+ifneq ($(TARGET_SIMULATOR),true)
 
 include $(CLEAR_VARS)
 
