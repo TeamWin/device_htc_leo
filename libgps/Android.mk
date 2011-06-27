@@ -1,9 +1,14 @@
 LOCAL_PATH:= $(call my-dir)
+
+ifneq ($(TARGET_SIMULATOR,true)
+
 include $(CLEAR_VARS)
 
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_MODULE := libgps
+
+LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)
 
 LOCAL_SHARED_LIBRARIES := libutils libcutils librpc
 
@@ -16,3 +21,5 @@ LOCAL_SRC_FILES := \
 		time.cpp \
 
 include $(BUILD_SHARED_LIBRARY)
+
+endif # !TARGET_SIMULATOR
