@@ -38,7 +38,9 @@
 
 #define  LOG_TAG  "gps_leo_rpc"
 
-#define  MEASUREMENT_PRECISION  5.0f // in meters
+#define  ENABLE_NMEA 0
+
+#define  MEASUREMENT_PRECISION  10.0f // in meters
 #define  DUMP_DATA  0
 #define  GPS_DEBUG  0
 
@@ -86,7 +88,11 @@ struct SVCXPRT {
 static uint32_t client_IDs[16];//highest known value is 0xb
 static uint32_t can_send=1; //To prevent from sending get_position when EVENT_END hasn't been received
 static uint32_t has_fix=0;
+#if ENABLE_NMEA
 static uint32_t use_nmea=1;
+#else
+static uint32_t use_nmea=0;
+#endif
 static struct CLIENT *_clnt;
 static struct timeval timeout;
 
@@ -726,7 +732,7 @@ int init_gps_rpc()
 int gps_xtra_set_data(unsigned char *xtra_data_ptr, uint32_t part_len, uint8_t part, uint8_t total_parts) 
 {
     uint32_t res = -1;
-    res = pdsm_xtra_set_data(_clnt, 0, client_IDs[0xb], 0, xtra_data_ptr, part_len, part, total_parts, 0);
+    res = pdsm_xtra_set_data(_clnt, 0, client_IDs[0xb], 0, xtra_data_ptr, part_len, part, total_parts, 1);
     return res;
 }
 
