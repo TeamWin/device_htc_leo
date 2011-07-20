@@ -38,7 +38,7 @@
 
 #define  LOG_TAG  "gps_leo_rpc"
 
-#define  ENABLE_NMEA 0
+#define  ENABLE_NMEA 1
 
 #define  MEASUREMENT_PRECISION  10.0f // in meters
 #define  DUMP_DATA  0
@@ -121,6 +121,17 @@ struct xtra_data_params {
     uint8_t total_parts;
 };
 
+struct xtra_validity_params {
+    //Used in two functions pdsm_xtra_query_data_validity and pdsm_xtra_client_initiate_download_request
+    uint32_t *data;
+};
+
+struct xtra_auto_params {
+    uint32_t *data;
+    uint8_t boolean;
+    uint16_t interval;
+};
+
 static bool_t xdr_args(XDR *clnt, struct params *par) {
     int i;
     uint32_t val=0;
@@ -182,6 +193,35 @@ static bool_t xdr_xtra_time_args(XDR *xdrs, struct xtra_time_params *xtra_time) 
     if (!xdr_u_long(xdrs, &xtra_time->data[2]))
         return 0;
     if (!xdr_pointer(xdrs, (char **)&xtra_time->time_info_ptr, sizeof(pdsm_xtra_time_info_type), (xdrproc_t) xdr_pdsm_xtra_time_info))
+        return 0;
+
+    return 1;
+}
+
+static bool_t xdr_xtra_validity_args(XDR *xdrs, struct xtra_validity_params *xtra_validity) {
+    //Used in two functions pdsm_xtra_query_data_validity and pdsm_xtra_client_initiate_download_request
+
+    if (!xdr_u_long(xdrs, &xtra_validity->data[0]))
+        return 0;
+    if (!xdr_int(xdrs, &xtra_validity->data[1]))
+        return 0;
+    if (!xdr_u_long(xdrs, &xtra_validity->data[2]))
+        return 0;
+
+    return 1;
+}
+
+static bool_t xdr_xtra_auto_args(XDR *xdrs, struct xtra_auto_params *xtra_auto) {
+
+    if (!xdr_u_long(xdrs, &xtra_auto->data[0]))
+        return 0;
+    if (!xdr_int(xdrs, &xtra_auto->data[1]))
+        return 0;
+    if (!xdr_u_long(xdrs, &xtra_auto->data[2]))
+        return 0;
+    if (!xdr_u_char(xdrs, &xtra_auto->boolean))
+        return 0;
+    if (!xdr_u_short(xdrs, &xtra_auto->interval))
         return 0;
 
     return 1;
@@ -414,6 +454,82 @@ int pdsm_xtra_inject_time_info(struct CLIENT *clnt, int val0, int client_ID, int
     return res;
 }
 
+int pdsm_xtra_query_data_validity(struct CLIENT *clnt, int val0, int client_ID, int val2) {
+    //Not Tested Not Used
+    struct xtra_validity_params xtra_validity;
+    uint32_t res = -1;
+    xtra_validity.data=malloc(sizeof(int)*3);
+    xtra_validity.data[0]=val0;
+    xtra_validity.data[1]=client_ID;
+    xtra_validity.data[2]=val2;
+    enum clnt_stat cs = -1;
+    cs = clnt_call(clnt, 0x1D,
+            (xdrproc_t) xdr_xtra_validity_args,
+            (caddr_t) &xtra_validity,
+            (xdrproc_t) xdr_result_int,
+            (caddr_t) &res, timeout);
+    //D("%s() is called: clnt_stat=%d", __FUNCTION__, cs);
+    if (cs != RPC_SUCCESS){
+        D("pdsm_xtra_query_data_validity(%x, %x, %d) failed\n", val0, client_ID, val2);
+        free(xtra_validity.data);
+        exit(-1);
+    }
+    D("pdsm_xtra_query_data_validity(%x, %x, %d)=%d\n", val0, client_ID, val2, res);
+    free(xtra_validity.data);
+    return res;
+}
+
+int pdsm_xtra_set_auto_download_params(struct CLIENT *clnt, int val0, int client_ID, int val2, uint8_t boolean, uint16_t interval) {
+    struct xtra_auto_params xtra_auto;
+    uint32_t res = -1;
+    xtra_auto.data=malloc(sizeof(int)*3);
+    xtra_auto.data[0]=val0;
+    xtra_auto.data[1]=client_ID;
+    xtra_auto.data[2]=val2;
+    xtra_auto.boolean=boolean;
+    xtra_auto.interval=interval;
+    enum clnt_stat cs = -1;
+    cs = clnt_call(clnt, 0x1C,
+            (xdrproc_t) xdr_xtra_auto_args,
+            (caddr_t) &xtra_auto,
+            (xdrproc_t) xdr_result_int,
+            (caddr_t) &res, timeout);
+    //D("%s() is called: clnt_stat=%d", __FUNCTION__, cs);
+    if (cs != RPC_SUCCESS){
+        D("pdsm_xtra_set_auto_download_params(%x, %x, %d, %d, %d) failed\n", val0, client_ID, val2, boolean, interval);
+        free(xtra_auto.data);
+        exit(-1);
+    }
+    D("pdsm_xtra_set_auto_download_params(%x, %x, %d, %d, %d)=%d\n", val0, client_ID, val2, boolean, interval, res);
+    free(xtra_auto.data);
+    return res;
+}
+
+int pdsm_xtra_client_initiate_download_request(struct CLIENT *clnt, int val0, int client_ID, int val2) {
+    //Works but not currently being used
+    struct xtra_validity_params xtra_request;
+    uint32_t res = -1;
+    xtra_request.data=malloc(sizeof(int)*3);
+    xtra_request.data[0]=val0;
+    xtra_request.data[1]=client_ID;
+    xtra_request.data[2]=val2;
+    enum clnt_stat cs = -1;
+    cs = clnt_call(clnt, 0x1B,
+            (xdrproc_t) xdr_xtra_validity_args,
+            (caddr_t) &xtra_request,
+            (xdrproc_t) xdr_result_int,
+            (caddr_t) &res, timeout);
+    //D("%s() is called: clnt_stat=%d", __FUNCTION__, cs);
+    if (cs != RPC_SUCCESS){
+        D("pdsm_xtra_client_initiate_download_request(%x, %x, %d) failed\n", val0, client_ID, val2);
+        free(xtra_request.data);
+        exit(-1);
+    }
+    D("pdsm_xtra_client_initiate_download_request(%x, %x, %d)=%d\n", val0, client_ID, val2, res);
+    free(xtra_request.data);
+    return res;
+}
+
 int pdsm_get_position(struct CLIENT *clnt, int val0, int val1, int val2, int val3, int val4, int val5, int val6, int val7, int val8, int val9, int val10, int val11, int val12, int val13, int val14, int val15, int val16, int 
 val17, int val18, int val19, int val20, int val21, int val22, int val23, int val24, int val25, int val26, int val27, int val28) 
 {
@@ -540,7 +656,8 @@ void dispatch_pdsm_pd(uint32_t *data) {
 
         if (ntohl(data[75])) {
             fix.flags |= GPS_LOCATION_HAS_ACCURACY;
-            fix.accuracy = (float)ntohl(data[75]) / 10.0f * MEASUREMENT_PRECISION;
+            float hdop = (float)ntohl(data[75]) / 10.0f / 2.0f;
+            fix.accuracy = hdop * MEASUREMENT_PRECISION;
         }
 
         union {
@@ -571,7 +688,12 @@ void dispatch_pdsm_pd(uint32_t *data) {
         D("PDSM_PD_EVENT_HEIGHT");
         if (use_nmea) return;
         fix.flags |= GPS_LOCATION_HAS_ALTITUDE;
-        fix.altitude = (double)ntohl(data[64]) / 10.0f;
+        fix.altitude = 0;
+        double altitude = (double)ntohl(data[64]);
+        if (altitude / 10.0f < 1000000) // Check if height is not unreasonably high
+            fix.altitude = altitude / 10.0f; // Apply height with a division of 10 to correct unit of meters
+        else // If unreasonably high then it is a negative height
+            fix.altitude = (altitude - (double)4294967295) / 10.0f; // Subtract FFFFFFFF to make height negative
     }
     if (fix.flags)
     {
@@ -620,6 +742,24 @@ void dispatch_pdsm_ext(uint32_t *data) {
     }
 }
 
+void dispatch_pdsm_xtra_req(uint8_t *data) {
+    //Handles download requests from gps chip
+    //Have to check if it is a download request because the same procid is multipurpose
+    
+    unsigned char url[9]; //Stores the filename for the xtra data
+    unsigned int i = 0x50;
+    
+    memcpy(url, &(data[i]), 8); //Copies the filename from the rpc message
+    url[8] = '\0'; //Adds the null terminate at the end of the filename to create a string
+    
+    // Performs comparison with expected string "xtra.bin"
+    if (strcmp(url, "xtra.bin") == 0) {
+        D("Calling xtra_download_request()");
+        //Calls the gps_xtra_download_request callback method
+        xtra_download_request();
+    }
+}
+
 void dispatch_pdsm(uint32_t *data) {
     uint32_t procid=ntohl(data[5]);
     D("%s() is called. data[5]=procid=%d", __FUNCTION__, procid);
@@ -627,6 +767,8 @@ void dispatch_pdsm(uint32_t *data) {
         dispatch_pdsm_pd(&(data[10]));
     else if(procid==4) 
         dispatch_pdsm_ext(&(data[10]));
+    else if(procid==5)
+        dispatch_pdsm_xtra_req(&(data[10]));
 }
 
 void dispatch_atl(uint32_t *data) {
@@ -680,6 +822,49 @@ int pdsm_client_end_session(struct CLIENT *clnt, int val0, int val1, int val2, i
     return 0;
 }
 
+static int CHECKED = 0;
+static int XTRA_AUTO_DOWNLOAD_ENABLED = 0;
+static int XTRA_DOWNLOAD_INTERVAL = 24;
+
+int parse_gps_conf() {
+    FILE *file = fopen("/system/etc/gps.conf", "r");
+    if (!file) { 
+        D("fopen error\n");
+        return 1; 
+    }
+    
+    char *check_enabled  = "GPS1_XTRA_AUTO_DOWNLOAD_ENABLED";
+    char *check_interval = "GPS1_XTRA_DOWNLOAD_INTERVAL";
+    char *result;
+    char str[256];
+    int i = -1;
+
+    while (fscanf(file, "%s", str) != EOF) {
+        //printf("%s (%d)\n", str, strlen(str));
+        if (!CHECKED) {
+            result = strstr(str, check_enabled);
+            if (result != NULL) {
+                result = result+strlen(check_enabled)+1;
+                i = atoi(result);
+                if (i==0 || i==1)
+                    XTRA_AUTO_DOWNLOAD_ENABLED = i;
+                CHECKED = 1;
+            }
+        }
+        if (XTRA_AUTO_DOWNLOAD_ENABLED) {
+            result = strstr(str, check_interval);
+            if (result != NULL) {
+                result = result+strlen(check_interval)+1;
+                i = atoi(result);
+                if (i>0 && i<169)
+                    XTRA_DOWNLOAD_INTERVAL = i;
+            }
+        }
+    }
+    fclose(file);
+    return 0;
+}
+
 int init_leo() 
 {
     struct CLIENT *clnt=clnt_create(NULL, 0x3000005B, 0x00010001, NULL);
@@ -719,6 +904,10 @@ int init_leo()
     pdsm_client_init(clnt, 4);
     pdsm_client_lcs_reg(clnt, 4, 0, 7, 0, 0x3F0, 0);
     pdsm_client_act(clnt, 4);
+    
+    parse_gps_conf();
+    if (XTRA_AUTO_DOWNLOAD_ENABLED)
+        gps_xtra_set_auto_params();
 
     return 0;
 }
@@ -733,6 +922,24 @@ int gps_xtra_set_data(unsigned char *xtra_data_ptr, uint32_t part_len, uint8_t p
 {
     uint32_t res = -1;
     res = pdsm_xtra_set_data(_clnt, 0, client_IDs[0xb], 0, xtra_data_ptr, part_len, part, total_parts, 1);
+    return res;
+}
+
+int gps_xtra_init_down_req() 
+{
+    //Tell gpsOne to request xtra data
+    uint32_t res = -1;
+    res = pdsm_xtra_client_initiate_download_request(_clnt, 0, client_IDs[0xb], 0);
+    return res;
+}
+
+int gps_xtra_set_auto_params() 
+{
+    //Set xtra auto download parameters
+    uint32_t res = -1;
+    uint8_t boolean = XTRA_AUTO_DOWNLOAD_ENABLED; //Enable/Disable
+    uint16_t interval = XTRA_DOWNLOAD_INTERVAL; //Interval in hours 1 to 168(Week)
+    res = pdsm_xtra_set_auto_download_params(_clnt, 0, client_IDs[0xb], 0, boolean, interval);
     return res;
 }
 
