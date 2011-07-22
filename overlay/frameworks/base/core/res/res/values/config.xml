@@ -186,5 +186,11 @@
    <!-- Enable use of power animations -->
     <bool name="config_animateScreenLights">false</bool>
 
+    <bool name="cm_default_has_soft_buttons">true</bool>
+    <bool name="cm_default_show_soft_home">false</bool>
+    <bool name="cm_default_show_soft_menu">false</bool>
+    <bool name="cm_default_show_soft_back">false</bool>
+    <bool name="cm_default_show_soft_search">false</bool>
+    <bool name="cm_default_show_soft_quick_na">false</bool>
 
 </resources>
