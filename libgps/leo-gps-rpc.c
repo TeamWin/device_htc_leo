@@ -86,7 +86,6 @@ struct SVCXPRT {
 } while(0);
 
 static uint32_t client_IDs[16];//highest known value is 0xb
-static uint32_t can_send=1; //To prevent from sending get_position when EVENT_END hasn't been received
 static uint32_t has_fix=0;
 #if ENABLE_NMEA
 static uint32_t use_nmea=1;
@@ -95,6 +94,7 @@ static uint32_t use_nmea=0;
 #endif
 static struct CLIENT *_clnt;
 static struct timeval timeout;
+static SVCXPRT *_svc;
 
 struct params {
     uint32_t *data;
@@ -230,16 +230,31 @@ static bool_t xdr_xtra_auto_args(XDR *xdrs, struct xtra_auto_params *xtra_auto) 
 static int pdsm_client_init(struct CLIENT *clnt, int client) {
     struct params par;
     uint32_t res;
-    par.data=malloc(sizeof(int));
+    uint32_t par_data[1];
+    par.data = par_data;
     par.length=1;
     par.data[0]=client;
     if(clnt_call(clnt, 0x2, xdr_args, &par, xdr_result_int, &res, timeout)) {
         D("pdsm_client_init(%x) failed\n", client);
-        free(par.data);
         exit(-1);
     }
     D("pdsm_client_init(%x)=%x\n", client, res);
-    free(par.data);
+    client_IDs[client]=res;
+    return 0;
+}
+
+static int pdsm_client_release(struct CLIENT *clnt, int client) {
+    struct params par;
+    uint32_t res;
+    uint32_t par_data;
+    par.data = &par_data;
+    par.length=1;
+    par.data[0]=client_IDs[client];
+    if(clnt_call(clnt, 0x3, xdr_args, &par, xdr_result_int, &res, timeout)) {
+        D("pdsm_client_release(%x) failed\n", client_IDs[client]);
+        exit(-1);
+    }
+    D("pdsm_client_release(%x)=%x\n", client_IDs[client], res);
     client_IDs[client]=res;
     return 0;
 }
@@ -247,42 +262,41 @@ static int pdsm_client_init(struct CLIENT *clnt, int client) {
 int pdsm_atl_l2_proxy_reg(struct CLIENT *clnt, int val0, int val1, int val2) {
     struct params par;
     uint32_t res;
-    par.data=malloc(sizeof(int)*3);
+    uint32_t par_data[3];
+    par.data = par_data;
     par.length=3;
     par.data[0]=val0;
     par.data[1]=val1;
     par.data[2]=val2;
     if(clnt_call(clnt, 0x3, xdr_args, &par, xdr_result_int, &res, timeout)) {
         D("pdsm_atl_l2_proxy_reg(%d, %d, %d) failed\n", par.data[0], par.data[1], par.data[2]);
-        free(par.data);
         exit(-1);
     }
     D("pdsm_atl_l2_proxy_reg(%d, %d, %d)=%d\n", par.data[0], par.data[1], par.data[2], res);
-    free(par.data);
     return res;
 }
 
 int pdsm_atl_dns_proxy_reg(struct CLIENT *clnt, int val0, int val1) {
     struct params par;
     uint32_t res;
-    par.data=malloc(sizeof(int)*2);
+    uint32_t par_data[2];
+    par.data = par_data;
     par.length=2;
     par.data[0]=val0;
     par.data[1]=val1;
     if(clnt_call(clnt, 0x6, xdr_args, &par, xdr_result_int, &res, timeout)) {
         D("pdsm_atl_dns_proxy_reg(%d, %d) failed\n", par.data[0], par.data[1]);
-        free(par.data);
         exit(-1);
     }
     D("pdsm_atl_dns_proxy(%d, %d)=%d\n", par.data[0], par.data[1], res);
-    free(par.data);
     return res;
 }
 
 int pdsm_client_pd_reg(struct CLIENT *clnt, int client, int val0, int val1, int val2, int val3, int val4) {
     struct params par;
     uint32_t res;
-    par.data=malloc(sizeof(int)*6);
+    uint32_t par_data[6];
+    par.data = par_data;
     par.length=6;
     par.data[0]=client_IDs[client];
     par.data[1]=val0;
@@ -292,18 +306,17 @@ int pdsm_client_pd_reg(struct CLIENT *clnt, int client, int val0, int val1, int 
     par.data[5]=val4;
     if(clnt_call(clnt, 0x4, xdr_args, &par, xdr_result_int, &res, timeout)) {
         D("pdsm_client_pd_reg(%x, %d, %d, %d, %x, %d) failed\n", par.data[0], par.data[1], par.data[2], par.data[3], par.data[4], par.data[5]);
-        free(par.data);
         exit(-1);
     }
     D("pdsm_client_pd_reg(%x, %d, %d, %d, %x, %d)=%d\n", par.data[0], par.data[1], par.data[2], par.data[3], par.data[4], par.data[5], res);
-    free(par.data);
     return res;
 }
 
 int pdsm_client_pa_reg(struct CLIENT *clnt, int client, int val0, int val1, int val2, int val3, int val4) {
     struct params par;
     uint32_t res;
-    par.data=malloc(sizeof(int)*6);
+    uint32_t par_data[6];
+    par.data = par_data;
     par.length=6;
     par.data[0]=client_IDs[client];
     par.data[1]=val0;
@@ -313,18 +326,17 @@ int pdsm_client_pa_reg(struct CLIENT *clnt, int client, int val0, int val1, int 
     par.data[5]=val4;
     if(clnt_call(clnt, 0x5, xdr_args, &par, xdr_result_int, &res, timeout)) {
         D("pdsm_client_pa_reg(%x, %d, %d, %d, %x, %d) failed\n", par.data[0], par.data[1], par.data[2], par.data[3], par.data[4], par.data[5]);
-        free(par.data);
         exit(-1);
     }
     D("pdsm_client_pa_reg(%x, %d, %d, %d, %x, %d)=%d\n", par.data[0], par.data[1], par.data[2], par.data[3], par.data[4], par.data[5], res);
-    free(par.data);
     return res;
 }
 
 int pdsm_client_lcs_reg(struct CLIENT *clnt, int client, int val0, int val1, int val2, int val3, int val4) {
     struct params par;
     uint32_t res;
-    par.data=malloc(sizeof(int)*6);
+    uint32_t par_data[6];
+    par.data = par_data;
     par.length=6;
     par.data[0]=client_IDs[client];
     par.data[1]=val0;
@@ -334,18 +346,17 @@ int pdsm_client_lcs_reg(struct CLIENT *clnt, int client, int val0, int val1, int
     par.data[5]=val4;
     if(clnt_call(clnt, 0x6, xdr_args, &par, xdr_result_int, &res, timeout)) {
         D("pdsm_client_lcs_reg(%x, %d, %d, %d, %x, %d) failed\n", par.data[0], par.data[1], par.data[2], par.data[3], par.data[4], par.data[5]);
-        free(par.data);
         exit(-1);
     }
     D("pdsm_client_lcs_reg(%x, %d, %d, %d, %x, %d)=%d\n", par.data[0], par.data[1], par.data[2], par.data[3], par.data[4], par.data[5], res);
-    free(par.data);
     return res;
 }
 
 int pdsm_client_ext_status_reg(struct CLIENT *clnt, int client, int val0, int val1, int val2, int val3, int val4) {
     struct params par;
     uint32_t res;
-    par.data=malloc(sizeof(int)*6);
+    uint32_t par_data[6];
+    par.data = par_data;
     par.length=6;
     par.data[0]=client_IDs[client];
     par.data[1]=val0;
@@ -355,18 +366,17 @@ int pdsm_client_ext_status_reg(struct CLIENT *clnt, int client, int val0, int va
     par.data[5]=val4;
     if(clnt_call(clnt, 0x8, xdr_args, &par, xdr_result_int, &res, timeout)) {
         D("pdsm_client_ext_status_reg(%x, %d, %d, %d, %d, %d) failed\n", par.data[0], par.data[1], par.data[2], par.data[3], par.data[4], par.data[5]);
-        free(par.data);
         exit(-1);
     }
     D("pdsm_client_ext_status_reg(%x, %d, %d, %d, %d, %d)=%d\n", par.data[0], par.data[1], par.data[2], par.data[3], par.data[4], par.data[5], res);
-    free(par.data);
     return res;
 }
 
 int pdsm_client_xtra_reg(struct CLIENT *clnt, int client, int val0, int val1, int val2, int val3, int val4) {
     struct params par;
     uint32_t res;
-    par.data=malloc(sizeof(int)*6);
+    uint32_t par_data[6];
+    par.data = par_data;
     par.length=6;
     par.data[0]=client_IDs[client];
     par.data[1]=val0;
@@ -376,34 +386,47 @@ int pdsm_client_xtra_reg(struct CLIENT *clnt, int client, int val0, int val1, in
     par.data[5]=val4;
     if(clnt_call(clnt, 0x7, xdr_args, &par, xdr_result_int, &res, timeout)) {
         D("pdsm_client_xtra_reg(%x, %d, %d, %d, %d, %d) failed\n", par.data[0], par.data[1], par.data[2], par.data[3], par.data[4], par.data[5]);
-        free(par.data);
         exit(-1);
     }
     D("pdsm_client_xtra_reg(%x, %d, %d, %d, %d, %d)=%d\n", par.data[0], par.data[1], par.data[2], par.data[3], par.data[4], par.data[5], res);
-    free(par.data);
+    return res;
+}
+
+int pdsm_client_deact(struct CLIENT *clnt, int client) {
+    struct params par;
+    uint32_t res;
+    uint32_t par_data;
+    par.data = &par_data;
+    par.length=1;
+    par.data[0]=client_IDs[client];
+    if(clnt_call(clnt, 0xA, xdr_args, &par, xdr_result_int, &res, timeout)) {
+        D("pdsm_client_deact(%x) failed\n", par.data[0]);
+        exit(-1);
+    }
+    D("pdsm_client_deact(%x)=%d\n", par.data[0], res);
     return res;
 }
 
 int pdsm_client_act(struct CLIENT *clnt, int client) {
     struct params par;
     uint32_t res;
-    par.data=malloc(sizeof(int));
+    uint32_t par_data[1];
+    par.data = par_data;
     par.length=1;
     par.data[0]=client_IDs[client];
     if(clnt_call(clnt, 0x9, xdr_args, &par, xdr_result_int, &res, timeout)) {
         D("pdsm_client_act(%x) failed\n", par.data[0]);
-        free(par.data);
         exit(-1);
     }
     D("pdsm_client_act(%x)=%d\n", par.data[0], res);
-    free(par.data);
     return res;
 }
 
 int pdsm_xtra_set_data(struct CLIENT *clnt, int val0, int client_ID, int val2, unsigned char *xtra_data_ptr, uint32_t part_len, uint8_t part, uint8_t total_parts, int val3) {
     struct xtra_data_params xtra_data;
     uint32_t res = -1;
-    xtra_data.data=malloc(sizeof(int)*4);
+    uint32_t par_data[4];
+    xtra_data.data = par_data;
     xtra_data.data[0]=val0;
     xtra_data.data[1]=client_ID;
     xtra_data.data[2]=val2;
@@ -421,18 +444,17 @@ int pdsm_xtra_set_data(struct CLIENT *clnt, int val0, int client_ID, int val2, u
     //D("%s() is called: clnt_stat=%d", __FUNCTION__, cs);
     if (cs != RPC_SUCCESS){
         D("pdsm_xtra_set_data(%x, %x, %d, 0x%x, %d, %d, %d, %d) failed\n", val0, client_ID, val2, (int) xtra_data_ptr, part_len, part, total_parts, val3);
-        free(xtra_data.data);
         exit(-1);
     }
     D("pdsm_xtra_set_data(%x, %x, %d, 0x%x, %d, %d, %d, %d)=%d\n", val0, client_ID, val2, (int) xtra_data_ptr, part_len, part, total_parts, val3, res);
-    free(xtra_data.data);
     return res;
 }
 
 int pdsm_xtra_inject_time_info(struct CLIENT *clnt, int val0, int client_ID, int val2, pdsm_xtra_time_info_type *time_info_ptr) {
     struct xtra_time_params xtra_time;
     uint32_t res = -1;
-    xtra_time.data=malloc(sizeof(int)*3);
+    uint32_t par_data[3];
+    xtra_time.data = par_data;
     xtra_time.data[0]=val0;
     xtra_time.data[1]=client_ID;
     xtra_time.data[2]=val2;
@@ -446,11 +468,9 @@ int pdsm_xtra_inject_time_info(struct CLIENT *clnt, int val0, int client_ID, int
     //D("%s() is called: clnt_stat=%d", __FUNCTION__, cs);
     if (cs != RPC_SUCCESS){
         D("pdsm_xtra_inject_time_info(%x, %x, %d, %lld, %d) failed\n", val0, client_ID, val2, time_info_ptr->time_utc, time_info_ptr->uncertainty);
-        free(xtra_time.data);
         exit(-1);
     }
     D("pdsm_xtra_inject_time_info(%x, %x, %d, %lld, %d)=%d\n", val0, client_ID, val2, time_info_ptr->time_utc, time_info_ptr->uncertainty, res);
-    free(xtra_time.data);
     return res;
 }
 
@@ -458,7 +478,8 @@ int pdsm_xtra_query_data_validity(struct CLIENT *clnt, int val0, int client_ID, 
     //Not Tested Not Used
     struct xtra_validity_params xtra_validity;
     uint32_t res = -1;
-    xtra_validity.data=malloc(sizeof(int)*3);
+    uint32_t par_data[3];
+    xtra_validity.data = par_data;
     xtra_validity.data[0]=val0;
     xtra_validity.data[1]=client_ID;
     xtra_validity.data[2]=val2;
@@ -471,18 +492,17 @@ int pdsm_xtra_query_data_validity(struct CLIENT *clnt, int val0, int client_ID, 
     //D("%s() is called: clnt_stat=%d", __FUNCTION__, cs);
     if (cs != RPC_SUCCESS){
         D("pdsm_xtra_query_data_validity(%x, %x, %d) failed\n", val0, client_ID, val2);
-        free(xtra_validity.data);
         exit(-1);
     }
     D("pdsm_xtra_query_data_validity(%x, %x, %d)=%d\n", val0, client_ID, val2, res);
-    free(xtra_validity.data);
     return res;
 }
 
 int pdsm_xtra_set_auto_download_params(struct CLIENT *clnt, int val0, int client_ID, int val2, uint8_t boolean, uint16_t interval) {
     struct xtra_auto_params xtra_auto;
     uint32_t res = -1;
-    xtra_auto.data=malloc(sizeof(int)*3);
+    uint32_t par_data[3];
+    xtra_auto.data = par_data;
     xtra_auto.data[0]=val0;
     xtra_auto.data[1]=client_ID;
     xtra_auto.data[2]=val2;
@@ -497,11 +517,9 @@ int pdsm_xtra_set_auto_download_params(struct CLIENT *clnt, int val0, int client
     //D("%s() is called: clnt_stat=%d", __FUNCTION__, cs);
     if (cs != RPC_SUCCESS){
         D("pdsm_xtra_set_auto_download_params(%x, %x, %d, %d, %d) failed\n", val0, client_ID, val2, boolean, interval);
-        free(xtra_auto.data);
         exit(-1);
     }
     D("pdsm_xtra_set_auto_download_params(%x, %x, %d, %d, %d)=%d\n", val0, client_ID, val2, boolean, interval, res);
-    free(xtra_auto.data);
     return res;
 }
 
@@ -509,7 +527,8 @@ int pdsm_xtra_client_initiate_download_request(struct CLIENT *clnt, int val0, in
     //Works but not currently being used
     struct xtra_validity_params xtra_request;
     uint32_t res = -1;
-    xtra_request.data=malloc(sizeof(int)*3);
+    uint32_t par_data[3];
+    xtra_request.data = par_data;
     xtra_request.data[0]=val0;
     xtra_request.data[1]=client_ID;
     xtra_request.data[2]=val2;
@@ -522,11 +541,9 @@ int pdsm_xtra_client_initiate_download_request(struct CLIENT *clnt, int val0, in
     //D("%s() is called: clnt_stat=%d", __FUNCTION__, cs);
     if (cs != RPC_SUCCESS){
         D("pdsm_xtra_client_initiate_download_request(%x, %x, %d) failed\n", val0, client_ID, val2);
-        free(xtra_request.data);
         exit(-1);
     }
     D("pdsm_xtra_client_initiate_download_request(%x, %x, %d)=%d\n", val0, client_ID, val2, res);
-    free(xtra_request.data);
     return res;
 }
 
@@ -535,7 +552,8 @@ val17, int val18, int val19, int val20, int val21, int val22, int val23, int val
 {
     struct params par;
     uint32_t res;
-    par.data=malloc(sizeof(int)*29);
+    uint32_t par_data[29];
+    par.data = par_data;
     par.length=29;
     par.data[0]=val0;
     par.data[1]=val1;
@@ -573,12 +591,28 @@ val17, int val18, int val19, int val20, int val21, int val22, int val23, int val
              (caddr_t)&res, timeout)) 
     {
         D("pdsm_client_get_position() failed\n");
-        free(par.data);
         exit(-1);
     }
     D("pdsm_client_get_position()=%d\n", res);
-    free(par.data);
     return res;
+}
+
+int pdsm_client_end_session(struct CLIENT *clnt, int val0, int val1, int val2, int client) {
+    struct params par;
+    uint32_t res;
+    uint32_t par_data[4];
+    par.data = par_data;
+    par.length=4;
+    par.data[0]=val0;
+    par.data[1]=val1;
+    par.data[2]=val2;
+    par.data[3]=client_IDs[client];
+    if(clnt_call(clnt, 0xc, xdr_args, &par, xdr_result_int, &res, timeout)) {
+        D("pdsm_client_end_session(%d, %d, %d, %x) failed\n", par.data[0], par.data[1], par.data[2], par.data[3]);
+        exit(-1);
+    }
+    D("pdsm_client_end_session(%d, %d, %d, %x)=%x\n", par.data[0], par.data[1], par.data[2], par.data[3], res);
+    return 0;
 }
 
 enum pdsm_pd_events {
@@ -690,10 +724,10 @@ void dispatch_pdsm_pd(uint32_t *data) {
         fix.flags |= GPS_LOCATION_HAS_ALTITUDE;
         fix.altitude = 0;
         double altitude = (double)ntohl(data[64]);
-        if (altitude / 10.0f < 1000000) // Check if height is not unreasonably high
+        if (altitude / 10.0f < 1000000.0) // Check if height is not unreasonably high
             fix.altitude = altitude / 10.0f; // Apply height with a division of 10 to correct unit of meters
         else // If unreasonably high then it is a negative height
-            fix.altitude = (altitude - (double)4294967295) / 10.0f; // Subtract FFFFFFFF to make height negative
+            fix.altitude = (altitude - (double)4294967295.0) / 10.0f; // Subtract FFFFFFFF to make height negative
     }
     if (fix.flags)
     {
@@ -706,7 +740,7 @@ void dispatch_pdsm_pd(uint32_t *data) {
     if(event&PDSM_PD_EVENT_DONE)
     {
         D("PDSM_PD_EVENT_DONE");
-        can_send=1;
+        pdsm_pd_callback();
     }
 }
 
@@ -803,28 +837,15 @@ void dispatch(struct svc_req* a, registered_server* svc) {
     svc_sendreply(svc, xdr_int, &result);
 }
 
-int pdsm_client_end_session(struct CLIENT *clnt, int val0, int val1, int val2, int client) {
-    struct params par;
-    uint32_t res;
-    par.data=malloc(sizeof(int)*4);
-    par.length=4;
-    par.data[0]=val0;
-    par.data[1]=val1;
-    par.data[2]=val2;
-    par.data[3]=client_IDs[client];
-    if(clnt_call(clnt, 0xc, xdr_args, &par, xdr_result_int, &res, timeout)) {
-        D("pdsm_client_end_session(%d, %d, %d, %x) failed\n", par.data[0], par.data[1], par.data[2], par.data[3]);
-        free(par.data);
-        exit(-1);
-    }
-    D("pdsm_client_end_session(%d, %d, %d, %x)=%x\n", par.data[0], par.data[1], par.data[2], par.data[3], res);
-    free(par.data);
-    return 0;
-}
+static uint8_t CHECKED[3] = {0};
+static uint8_t XTRA_AUTO_DOWNLOAD_ENABLED = 0;
+static uint8_t XTRA_DOWNLOAD_INTERVAL = 24;
+static uint8_t CLEANUP_ENABLED = 1;
 
-static int CHECKED = 0;
-static int XTRA_AUTO_DOWNLOAD_ENABLED = 0;
-static int XTRA_DOWNLOAD_INTERVAL = 24;
+uint8_t get_cleanup_value() {
+    D("%s() is called: %d", __FUNCTION__, CLEANUP_ENABLED);
+    return CLEANUP_ENABLED;
+}
 
 int parse_gps_conf() {
     FILE *file = fopen("/system/etc/gps.conf", "r");
@@ -833,22 +854,23 @@ int parse_gps_conf() {
         return 1; 
     }
     
-    char *check_enabled  = "GPS1_XTRA_AUTO_DOWNLOAD_ENABLED";
+    char *check_auto_download = "GPS1_XTRA_AUTO_DOWNLOAD_ENABLED";
     char *check_interval = "GPS1_XTRA_DOWNLOAD_INTERVAL";
+    char *check_cleanup = "GPS1_CLEANUP_ENABLED";
     char *result;
     char str[256];
     int i = -1;
 
     while (fscanf(file, "%s", str) != EOF) {
         //printf("%s (%d)\n", str, strlen(str));
-        if (!CHECKED) {
-            result = strstr(str, check_enabled);
+        if (!CHECKED[1]) {
+            result = strstr(str, check_auto_download);
             if (result != NULL) {
-                result = result+strlen(check_enabled)+1;
+                result = result+strlen(check_auto_download)+1;
                 i = atoi(result);
                 if (i==0 || i==1)
                     XTRA_AUTO_DOWNLOAD_ENABLED = i;
-                CHECKED = 1;
+                CHECKED[1] = 1;
             }
         }
         if (XTRA_AUTO_DOWNLOAD_ENABLED) {
@@ -858,6 +880,16 @@ int parse_gps_conf() {
                 i = atoi(result);
                 if (i>0 && i<169)
                     XTRA_DOWNLOAD_INTERVAL = i;
+            }
+        }
+        if (!CHECKED[2]) {
+            result = strstr(str, check_cleanup);
+            if (result != NULL) {
+                result = result+strlen(check_cleanup)+1;
+                i = atoi(result);
+                if (i==0 || i==1)
+                    CLEANUP_ENABLED = i;
+                CHECKED[2] = 1;
             }
         }
     }
@@ -872,6 +904,7 @@ int init_leo()
     int i;
     _clnt=clnt;
     SVCXPRT *svc=svcrtr_create();
+    _svc=svc;
     xprt_register(svc);
     svc_register(svc, 0x3100005b, 0x00010001, (__dispatch_fn_t)dispatch, 0);
     svc_register(svc, 0x3100005b, 0, (__dispatch_fn_t)dispatch, 0);
@@ -905,9 +938,12 @@ int init_leo()
     pdsm_client_lcs_reg(clnt, 4, 0, 7, 0, 0x3F0, 0);
     pdsm_client_act(clnt, 4);
     
-    parse_gps_conf();
-    if (XTRA_AUTO_DOWNLOAD_ENABLED)
-        gps_xtra_set_auto_params();
+    if (!CHECKED[0]) {
+        parse_gps_conf();
+        if (XTRA_AUTO_DOWNLOAD_ENABLED)
+            gps_xtra_set_auto_params();
+        CHECKED[0] = 1;
+    }
 
     return 0;
 }
@@ -958,14 +994,11 @@ int gps_xtra_inject_time_info(GpsUtcTime time, int64_t timeReference, int uncert
     return res;
 }
 
-void gps_get_position() 
+void gps_get_position(int timeout) 
 {
     D("%s() is called", __FUNCTION__);
-    int i;
-    for(i = 3; i; --i) if(!can_send) sleep(1);//Time out of 3 seconds on can_send
-    D("%s() is called. can_send=%d", __FUNCTION__, can_send);
     pdsm_get_position(_clnt, 
-            2, 0,           
+            0, 0,           
             1,              
             1, 1,           
             0x3B9AC9FF, 1,  
@@ -975,14 +1008,33 @@ void gps_get_position()
         0,                  
        0, 0, 0, 0, 0, 0, 0, 
        0, 0, 0, 0, 0,       
-       1, 50, 2,
+       1, 50, timeout,
        client_IDs[2]);
-    can_send = 0;
 }
 
 void exit_gps_rpc() 
 {
     pdsm_client_end_session(_clnt, 0, 0, 0, 2);
+}
+
+void cleanup_gps_rpc_clients() 
+{
+    pdsm_client_deact(_clnt, 2);
+    pdsm_client_deact(_clnt, 0xb);
+    pdsm_client_deact(_clnt, 4);
+    
+    pdsm_client_release(_clnt, 2);
+    pdsm_client_release(_clnt, 0xb);
+    pdsm_client_release(_clnt, 4);
+    
+    svc_unregister(_svc, 0x3100005b, 0x00010001);
+    svc_unregister(_svc, 0x3100005b, 0);
+    svc_unregister(_svc, 0x3100001d, 0x00010001);
+    svc_unregister(_svc, 0x3100001d, 0);
+    xprt_unregister(_svc);
+    svc_destroy(_svc);
+    
+    clnt_destroy(_clnt);
 }
 
 // END OF FILE

@@ -101,7 +101,7 @@ PRODUCT_PACKAGES += \
     gralloc.qsd8k \
     copybit.qsd8k \
     leo-reference-ril \
-    gps.leo \
+    gps.htcleo \
     libgps \
     libhtc_ril_wrapper
 
