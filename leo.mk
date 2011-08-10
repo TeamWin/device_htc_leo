@@ -34,8 +34,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.ril.enable.a53.HTC-ITA=1 \
     ro.ril.enable.a52=0 \
     ro.ril.enable.a53=1 \
-    ro.ril.enable.dtm = 1 \
-    ro.ril.gprsclass = 12 \
+    ro.ril.enable.dtm=1 \
+    ro.ril.gprsclass=12 \
     ro.ril.hsdpa.category=8 \
     ro.ril.hsupa.category=5 \
     ro.ril.hsxpa=2 \
@@ -148,7 +148,8 @@ LOCAL_KERNEL := $(TARGET_PREBUILT_KERNEL)
 endif
 
 # The gps config appropriate for this device
-$(call inherit-product, device/common/gps/gps_as_supl.mk)
+PRODUCT_COPY_FILES += \
+     device/htc/leo/gps.conf:system/etc/gps.conf
 
 PRODUCT_COPY_FILES += \
     $(LOCAL_KERNEL):kernel
