@@ -24,11 +24,11 @@
 
 PRODUCT_COPY_FILES += \
     device/htc/leo/init.htcleo.rc:root/init.htcleo.rc \
-    device/htc/leo/init.rc:root/init.rc \
 
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.sf.lcd_density=240 \
-    rild.libpath=/system/lib/libhtc_ril.so \
+    rild.libpath=/system/lib/libhtc_ril_wrapper.so \
+    rild.libargs=-d /dev/smd0 nand_init rmnet_mode \
     ro.ril.ecc.HTC-ELL=92,93,94 \
     ro.ril.ecc.HTC-WWE=999 \
     ro.ril.enable.a52.HTC-ITA=1 \

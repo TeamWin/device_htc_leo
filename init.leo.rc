@@ -1,3 +1,6 @@
+on fs
+    mount yaffs2 mtd@system /system remount
+
 on boot
     mount debugfs /sys/kernel/debug /sys/kernel/debug
 
@@ -122,9 +125,9 @@ service dumpstate /system/bin/dumpstate -s
 #    socket ipd stream 666 root inet
  
 # Execute files in /etc/init.d before booting
-service sysinit /system/bin/logwrapper /system/xbin/busybox run-parts /system/etc/init.d
-    disabled
-    oneshot
+#service sysinit /system/bin/logwrapper /system/xbin/busybox run-parts /system/etc/init.d
+#    disabled
+#    oneshot
  
 #on property:service.modem.enable=1
 #    start modem
