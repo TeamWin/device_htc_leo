@@ -106,7 +106,7 @@ on boot
     write /sys/module/lowmemorykiller/parameters/check_filepages 
  
  
-service hciattach /system/bin/brcm_patchram_plus --enable_hci\
+service hciattach /system/bin/brcm_patchram_plus --enable_hci \
      --baudrate 3000000 --patchram /etc/firmware/bcm4329.hcd /dev/ttyHS0
     user bluetooth                
     group bluetooth net_bt_admin
