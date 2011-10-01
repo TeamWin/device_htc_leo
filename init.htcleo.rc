@@ -1,5 +1,20 @@
+on init
+    symlink /dev/msm_camera/control0 /dev/msm_camera/control1
+    symlink /dev/msm_camera/frame0 /dev/msm_camera/frame1
+    symlink /dev/msm_camera/config0 /dev/msm_camera/config1
+
+    write /proc/sys/kernel/sched_min_granularity_ns 100000
+
 on fs
     mount yaffs2 mtd@system /system remount
+    mount rootfs rootfs / rw remount
+
+    # DRMv1 rights storage
+    symlink /data/local /data/drm
+    mkdir /data/local/rights 0777 shell shell
+    chown shell shell /data/drm
+    write /data/drm/rights/mid.txt 0
+    chmod 0777 /data/drm/rights/mid.txt
 
 on boot
     mount debugfs /sys/kernel/debug /sys/kernel/debug
@@ -24,11 +39,61 @@ on boot
     chown system system /data/misc/screen_lock_status
     chmod 644 /data/misc/screen_lock_status
 
+    # Write value must be consistent with the above properties.
+    # Note that the driver only supports 6 slots, so we have HOME_APP at the
+    # same memory level as services.
+    write /sys/module/lowmemorykiller/parameters/adj 0,1,2,7,14,15
+
+    chown radio system /sys/camera_led_status/led_ril_status
+    chown system system /sys/camera_led_status/led_wimax_status
+    chown system system /sys/camera_led_status/led_hotspot_status
+    chown media system /sys/android_camera/cam_mode
+    chown system system /sys/class/leds/caps/brightness
+    chown system system /sys/class/leds/func/brightness
+    chown system system /sys/class/leds/amber/brightness
+    chown system system /sys/class/leds/green/blink
+    chown system system /sys/class/leds/green/off_timer
+    chown system system /sys/class/leds/amber/blink
+    chown system system /sys/class/leds/amber/off_timer
+
+
     # for wireless modem
     chown system system /sys/module/serial/parameters/modem_enabled
     chown system system /dev/ttyHSUSB0
     chown system system /dev/smd9
     chown media media /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+    chmod 0666 /dev/ttyHS1
+    chown root radio /proc/cmdline
+    chmod 666 /proc/cmdline
+ 
+    chmod 666 /dev/input/event0
+    chmod 666 /dev/input/event1
+    chmod 666 /dev/input/event2
+    chmod 666 /dev/input/event3
+    chmod 666 /dev/input/event4
+    chmod 666 /dev/input/event5
+    chmod 666 /dev/input/event6
+    chmod 666 /sys/class/i2c-adapter/i2c-0/0-0018/enable
+    chmod 666 /sys/class/i2c-adapter/i2c-0/0-0019/enable
+    chmod 666 /sys/class/i2c-adapter/i2c-0/0-0018/rate  
+    chmod 666 /sys/class/i2c-adapter/i2c-0/0-0019/rate  
+    chmod 666 /sys/class/i2c-adapter/i2c-0/0-0018/scale
+    chmod 666 /sys/class/i2c-adapter/i2c-0/0-0019/scale
+ 
+    chmod 666 /dev/uinput
+    chmod 666 /etc/bluez/audio.conf
+    chmod 666 /etc/bluez/hcid.conf
+    chmod 666 /etc/bluez/input.conf
+ 
+    chmod 666 /dev/msm_snd
+    chmod 666 /dev/msm_pcm_in
+    chmod 666 /dev/msm_audpre
+    chmod 666 /dev/msm_mp3  
+    chmod 666 /dev/msm_pcm_out
+    chmod 666 /dev/msm_pcm_ctl
+    chmod 666 /dev/msm_hw3dm  
+    chmod 666 /dev/msm_hw3dc 
 
     # Power Management
     write /sys/devices/system/cpu/cpu0/cpufreq/ondemand/sampling_rate 40000
