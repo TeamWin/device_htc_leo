@@ -29,7 +29,7 @@ wifi.supplicant_scan_interval=120
 ro.telephony.default_network=0
 
 # density in DPI of the LCD of this board. This is used to scale the UI
-# appropriately. If this property is not defined, the default value is 120 dpi.
+# appropriately. If this property is not defined, the default value is 240 dpi.
 ro.sf.lcd_density=240
 
 # All the interfaces which can use data on
