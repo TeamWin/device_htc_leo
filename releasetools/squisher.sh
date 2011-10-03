@@ -1,10 +1,6 @@
 #!/bin/sh
-#
-# Squish a CM otapackage for distribution
-# cyanogen
-#
-
-# Doing leo specific stuff
+# This script is included in squisher
+# It is the final build step (after OTA package)
 
 echo "Making Leo Compatible Update script"
 cd $REPACK/ota/META-INF/com/google/android
@@ -15,10 +11,12 @@ rm -rf updater-script
 grep -vw boot.img  temp > updater-script
 rm -rf temp
 
-echo Zipping Package
+echo "Removing boot.img"
 cd $REPACK/ota
 rm -rf $REPACK/ota/boot.img
 rm -rf $REPACK/ota/boot
+
+echo "Adding boot folder"
 cp -a $OUT/boot $REPACK/ota/boot
 
 if [[ ! -e $OUT/temp/boot/initrd.gz ]] ; then
