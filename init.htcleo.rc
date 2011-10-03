@@ -95,6 +95,10 @@ on boot
     chmod 666 /dev/msm_hw3dm  
     chmod 666 /dev/msm_hw3dc 
 
+    # Fix permissions for GPS NMEA
+    chown system system /dev/smd27
+    chmod 777 /dev/smd27
+
     # Power Management
     write /sys/devices/system/cpu/cpu0/cpufreq/ondemand/sampling_rate 40000
 
