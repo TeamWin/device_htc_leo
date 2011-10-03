@@ -6,7 +6,7 @@ echo "updater-script: Making Compatible Update script"
 cd $REPACK/ota/META-INF/com/google/android
 echo 'mount("yaffs2", "MTD", "boot", "/boot");' >> temp
 echo 'package_extract_dir("boot", "/boot");' >> temp
-echo 'umount("/boot");' >> temp
+echo 'unmount("/boot");' >> temp
 grep -vw assert  updater-script >> temp
 rm -rf updater-script
 grep -vw boot.img  temp > updater-script
