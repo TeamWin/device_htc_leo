@@ -47,7 +47,7 @@ PRODUCT_COPY_FILES += \
 
 # media config xml file
 PRODUCT_COPY_FILES += \
-    device/htc/leo/media_profiles.xml:system/etc/media_profiles.xml
+    device/htc/leo/prebuilt/media_profiles.xml:system/etc/media_profiles.xml
 
 # This file is used to install the enable RMNET and corresponding modules which dont get activated by normal module script
 PRODUCT_COPY_FILES += \
@@ -74,18 +74,18 @@ PRODUCT_COPY_FILES += \
 
 # Keylayouts
 PRODUCT_COPY_FILES += \
-    device/htc/leo/keylayout/leo-keypad.kl:system/usr/keylayout/leo-keypad.kl \
-    device/htc/leo/keylayout/leo-keypad.kcm.bin:system/usr/keychars/leo-keypad.kcm.bin \
-    device/htc/leo/keylayout/h2w_headset.kl:system/usr/keylayout/h2w_headset.kl
+    device/htc/leo/prebuilt/keylayout/leo-keypad.kl:system/usr/keylayout/leo-keypad.kl \
+    device/htc/leo/prebuilt/keylayout/leo-keypad.kcm.bin:system/usr/keychars/leo-keypad.kcm.bin \
+    device/htc/leo/prebuilt/keylayout/h2w_headset.kl:system/usr/keylayout/h2w_headset.kl
 
 # Firmware
 PRODUCT_COPY_FILES += \
-    device/htc/leo/firmware/fw_bcm4329.bin:system/etc/firmware/fw_bcm4329.bin \
-    device/htc/leo/firmware/fw_bcm4329_apsta.bin:system/etc/firmware/fw_bcm4329_apsta.bin
+    device/htc/leo/prebuilt/firmware/fw_bcm4329.bin:system/etc/firmware/fw_bcm4329.bin \
+    device/htc/leo/prebuilt/firmware/fw_bcm4329_apsta.bin:system/etc/firmware/fw_bcm4329_apsta.bin
 
 #GSM APN LIST
 PRODUCT_COPY_FILES += \
-vendor/cyanogen/prebuilt/common/etc/apns-conf.xml:system/etc/apns-conf.xml
+    vendor/cyanogen/prebuilt/common/etc/apns-conf.xml:system/etc/apns-conf.xml
 
 
 PRODUCT_COPY_FILES += \

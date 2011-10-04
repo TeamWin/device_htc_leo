@@ -80,10 +80,10 @@ PRODUCT_COPY_FILES += \\
     vendor/__MANUFACTURER__/__DEVICE__/proprietary/BCM4329B1_002.002.023.0360.0362.hcd:system/etc/firmware/BCM4329B1_002.002.023.0360.0362.hcd \\
     vendor/__MANUFACTURER__/__DEVICE__/proprietary/BCM4329B1_002.002.023.0436.0439.hcd:system/etc/firmware/BCM4329B1_002.002.023.0436.0439.hcd \\
     vendor/__MANUFACTURER__/__DEVICE__/proprietary/BCM4329B1_002.002.023.0511.0538.hcd:system/etc/firmware/BCM4329B1_002.002.023.0511.0538.hcd \\
-vendor/__MANUFACTURER__/__DEVICE__/proprietary/htcleo.acdb:system/etc/firmware/htcleo.acdb \\
+    vendor/__MANUFACTURER__/__DEVICE__/proprietary/htcleo.acdb:system/etc/firmware/htcleo.acdb \\
     vendor/__MANUFACTURER__/__DEVICE__/proprietary/bcm4329.hcd:system/etc/firmware/bcm4329.hcd \\
-     vendor/__MANUFACTURER__/__DEVICE__/proprietary/htcleo.acdb:system/etc/firmware/htcleo.acdb \\
-     vendor/__MANUFACTURER__/__DEVICE__/proprietary/default.acdb:system/etc/firmware/default.acdb \\
+    vendor/__MANUFACTURER__/__DEVICE__/proprietary/htcleo.acdb:system/etc/firmware/htcleo.acdb \\
+    vendor/__MANUFACTURER__/__DEVICE__/proprietary/default.acdb:system/etc/firmware/default.acdb \\
     vendor/__MANUFACTURER__/__DEVICE__/proprietary/yamato_pfp.fw:system/etc/firmware/yamato_pfp.fw \\
     vendor/__MANUFACTURER__/__DEVICE__/proprietary/yamato_pm4.fw:system/etc/firmware/yamato_pm4.fw \\
     vendor/__MANUFACTURER__/__DEVICE__/proprietary/libEGL_adreno200.so:system/lib/egl/libEGL_adreno200.so \\
@@ -98,7 +98,7 @@ vendor/__MANUFACTURER__/__DEVICE__/proprietary/htcleo.acdb:system/etc/firmware/h
     vendor/__MANUFACTURER__/__DEVICE__/proprietary/libOmxVdec.so:system/lib/libOmxVdec.so \\
     vendor/__MANUFACTURER__/__DEVICE__/proprietary/libOmxVidEnc.so:system/lib/libOmxVidEnc.so \\
     vendor/__MANUFACTURER__/__DEVICE__/proprietary/libOmxCore.so:system/lib/libOmxCore.so \\
-vendor/__MANUFACTURER__/__DEVICE__/proprietary/sensors.bravo.so:system/lib/hw/sensors.bravo.so \\
+    vendor/__MANUFACTURER__/__DEVICE__/proprietary/sensors.bravo.so:system/lib/hw/sensors.bravo.so \\
 EOF
 
 ./setup-makefiles.sh
