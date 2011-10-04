@@ -62,7 +62,7 @@ BOARD_VENDOR_QCOM_AMSS_VERSION := 1550
 
 BOARD_VENDOR_USE_AKMD := akm8973
 
-BOARD_EGL_CFG := device/htc/leo/egl.cfg
+BOARD_EGL_CFG := device/htc/leo/prebuilt/egl.cfg
 
 BOARD_USE_FROYO_LIBCAMERA := true
 
@@ -94,13 +94,13 @@ BOARD_FLASH_BLOCK_SIZE := 131072
 
 
 TARGET_RELEASETOOLS_EXTENSIONS := device/htc/common
-TARGET_PREBUILT_KERNEL := device/htc/leo/kernel
+TARGET_PREBUILT_KERNEL := device/htc/leo/prebuilt/kernel
 
 # to enable the GPS HAL
 BOARD_VENDOR_QCOM_GPS_LOC_API_HARDWARE := leo
 # AMSS version to use for GPS
 BOARD_VENDOR_QCOM_GPS_LOC_API_AMSS_VERSION := 3200
 
-TARGET_PREBUILT_RECOVERY_KERNEL := device/htc/leo/recovery_kernel
+TARGET_PREBUILT_RECOVERY_KERNEL := device/htc/leo/prebuilt/recovery_kernel
 
 BOARD_USES_RECOVERY_CHARGEMODE := true
