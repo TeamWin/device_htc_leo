@@ -246,67 +246,7 @@ service udhcpd /system/bin/udhcpd
     disabled
     oneshot
  
-service netsharing_on /system/bin/netsharing net on
-    disabled
-    oneshot
- 
-service netsharing_off /system/bin/netsharing net off
-    disabled
-    oneshot
- 
-service netsharing_pass /system/bin/netsharing net_pass on
-    disabled
-    oneshot
- 
-service modem /system/xbin/wireless_modem
-    user system
-    group system
-    disabled
- 
-service zchgd /system/bin/zchgd
-    user root
-    group root graphics
-    oneshot
- 
-service dumpstate /system/bin/dumpstate -s
-    socket dumpstate stream 0660 shell log
-    disabled
-    oneshot
- 
-on property:dev.bootcomplete=1
-    start bootcomplete
- 
-service bootcomplete /system/bin/bootcomplete
-    user root
-    group root
-    disabled
-    oneshot
- 
-service shutdown /system/bin/shutdown
-    user root
-    group root
-    disabled
-    oneshot
- 
-service ipd /system/bin/ipd
-    socket ipd stream 666 root inet
- 
 # Execute files in /etc/init.d before booting
 service sysinit /system/bin/logwrapper /system/xbin/busybox run-parts /system/etc/init.d
     disabled
     oneshot
- 
-on property:service.modem.enable=1
-    start modem
- 
-on property:service.modem.enable=0
-    stop modem
- 
-service srv_ser2net /system/bin/ser2net -n
-    disabled
- 
-on property:service.ser2net.enable=1
-    start srv_ser2net
- 
-on property:service.ser2net.enable=0
-    stop srv_ser2net
