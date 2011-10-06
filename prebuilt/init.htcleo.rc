@@ -29,6 +29,13 @@ on boot
     chown bluetooth bluetooth /sys/class/rfkill/rfkill0/state
     chmod 0660                /sys/class/rfkill/rfkill0/state
 
+    # bluetooth MAC address programming
+    chown bluetooth bluetooth /sys/module/board_htcleo/parameters/bdaddr
+    setprop ro.bt.bdaddr_path /sys/module/board_htcleo/parameters/bdaddr
+
+    # bluetooth car dock pin
+    chown system system /sys/class/switch/dock/bt_pin
+
     chown radio radio /sys/module/pm/parameters/idle_sleep_mode
 
     # Set error receiver
@@ -44,27 +51,68 @@ on boot
     # same memory level as services.
     write /sys/module/lowmemorykiller/parameters/adj 0,1,2,7,14,15
 
+    # Permissions for liblights
+    chown system system /sys/class/leds/green/brightness
+    chown system system /sys/class/leds/green/blink
+    chown system system /sys/class/leds/amber/brightness
+    chown system system /sys/class/leds/amber/blink
+    chown system system /sys/class/leds/red/brightness
+    chown system system /sys/class/leds/red/blink
+    chown system system /sys/class/leds/blue/brightness
+    chown system system /sys/class/leds/blue/blink
+    chown system system /sys/class/leds/jogball-backlight/brightness
+    chown system system /sys/class/leds/jogball-backlight/color
+    chown system system /sys/class/leds/jogball-backlight/period
+    chown system system /sys/class/leds/button-backlight/brightness
+    chown system system /sys/class/leds/lcd-backlight/brightness
+
+    # Permissions for camera
     chown radio system /sys/camera_led_status/led_ril_status
     chown system system /sys/camera_led_status/led_wimax_status
     chown system system /sys/camera_led_status/led_hotspot_status
     chown media system /sys/android_camera/cam_mode
-    chown system system /sys/class/leds/caps/brightness
-    chown system system /sys/class/leds/func/brightness
-    chown system system /sys/class/leds/amber/brightness
-    chown system system /sys/class/leds/green/blink
-    chown system system /sys/class/leds/green/off_timer
-    chown system system /sys/class/leds/amber/blink
-    chown system system /sys/class/leds/amber/off_timer
 
+    # enable the GPS
+    setprop ro.ril.def.agps.mode 2
+
+    # performance tweaks for flash
+    write /sys/block/mtdblock0/bdi/read_ahead_kb 4
+    write /sys/block/mtdblock1/bdi/read_ahead_kb 4
+    write /sys/block/mtdblock2/bdi/read_ahead_kb 4
+    write /sys/block/mtdblock4/bdi/read_ahead_kb 4
+    write /sys/block/mtdblock5/bdi/read_ahead_kb 4
 
     # for wireless modem
     chown system system /sys/module/serial/parameters/modem_enabled
     chown system system /dev/ttyHSUSB0
     chown system system /dev/smd9
-    chown media media /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 
-    chmod 0666 /dev/ttyHS1
+    # Power Management
+    chown media media /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 245000
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 998400
+
+    # Wakelock debug
+    write /sys/module/wakelock/parameters/debug_mask 7
+
+    # Fast dormancy settings
+    setprop ro.ril.fast.dormancy.rule 1
+    setprop ro.ril.fd.scron.timeout 4
+    setprop ro.ril.fd.scroff.timeout 3
+
+    # GPRS class
+    setprop ro.ril.gprsclass 10
+
     chown root radio /proc/cmdline
+    chown system system /dev/ttyHS0
+    chown system system /dev/smd0
+    chown system system /dev/smd1
+    chown system system /dev/smd27
+
+    chmod 0666 /dev/rfkill
+    chmod 0666 /dev/q6venc
+    chmod 0666 /dev/ttyHS0
+    chmod 0666 /dev/ttyHS1
     chmod 666 /proc/cmdline
  
     chmod 666 /dev/input/event0
@@ -74,33 +122,65 @@ on boot
     chmod 666 /dev/input/event4
     chmod 666 /dev/input/event5
     chmod 666 /dev/input/event6
+
+    chmod 666 /dev/uinput
+    chmod 666 /dev/msm_aac_in
+    chmod 666 /dev/msm_audio_ctl
+    chmod 666 /dev/msm_audio_route
+    chmod 666 /dev/msm_mp3
+    chmod 666 /dev/msm_qcelp_in
+    chmod 666 /dev/msm_snd
+    chmod 666 /dev/msm_audpre
+
+    chmod 666 /dev/msm_pcm_in
+    chmod 666 /dev/msm_pcm_out
+    chmod 666 /dev/msm_pcm_ctl
+    chmod 666 /dev/msm_hw3dm
+    chmod 666 /dev/msm_hw3dc
+
+    chmod 666 /dev/qmi0
+    chmod 666 /dev/qmi1
+    chmod 666 /dev/qmi2
+
+    chmod 666 /etc/bluez/audio.conf
+    chmod 666 /etc/bluez/hcid.conf
+    chmod 666 /etc/bluez/input.conf
+
+    chmod 0777 /dev/kgsl
+    chmod 0777 /dev/smd0
+    chmod 0777 /dev/smd1
+    chmod 0777 /dev/smd27
+    chmod 0777 /dev/vfe
+    chmod 0777 /dev/camera
+    chmod 0777 /dev/msm_camera
+    chmod 0777 /dev/vogue_gps
+    chmod 0777 /dev/akm8973_aot
+    chmod 0777 /dev/akm8973_daemon
+    chmod 0777 /dev/compass
+    chmod 0777 /dev/lightsensor
+    chmod 0777 /dev/bma150
+    chmod 0777 /dev/cm3602
+    chmod 0777 /dev/htc-acoustic
+
+    # flashlight
+    chown system camera /sys/class/leds/flashlight/brightness
+    chmod 0666          /sys/class/leds/flashlight/brightness
+    chmod 0666          /sys/class/leds/flashlight/max_brightness
+
+    #720p cam support
+    symlink /dev/msm_camera/control0 /dev/msm_camera/control1
+    symlink /dev/msm_camera/frame0 /dev/msm_camera/frame1
+    symlink /dev/msm_camera/config0 /dev/msm_camera/config1
+
     chmod 666 /sys/class/i2c-adapter/i2c-0/0-0018/enable
     chmod 666 /sys/class/i2c-adapter/i2c-0/0-0019/enable
     chmod 666 /sys/class/i2c-adapter/i2c-0/0-0018/rate  
     chmod 666 /sys/class/i2c-adapter/i2c-0/0-0019/rate  
     chmod 666 /sys/class/i2c-adapter/i2c-0/0-0018/scale
     chmod 666 /sys/class/i2c-adapter/i2c-0/0-0019/scale
- 
-    chmod 666 /dev/uinput
-    chmod 666 /etc/bluez/audio.conf
-    chmod 666 /etc/bluez/hcid.conf
-    chmod 666 /etc/bluez/input.conf
- 
-    chmod 666 /dev/msm_snd
-    chmod 666 /dev/msm_pcm_in
-    chmod 666 /dev/msm_audpre
-    chmod 666 /dev/msm_mp3  
-    chmod 666 /dev/msm_pcm_out
-    chmod 666 /dev/msm_pcm_ctl
-    chmod 666 /dev/msm_hw3dm  
-    chmod 666 /dev/msm_hw3dc 
-
-    # Fix permissions for GPS NMEA
-    chown system system /dev/smd27
-    chmod 777 /dev/smd27
 
     # Power Management
-    write /sys/devices/system/cpu/cpu0/cpufreq/ondemand/sampling_rate 40000
+    # write /sys/devices/system/cpu/cpu0/cpufreq/ondemand/sampling_rate 40000
 
     # Overwrite framework low memory killer minfree setting
     write /sys/module/lowmemorykiller/parameters/minfree 3584,4096,6144,7168,7680,8192
@@ -115,7 +195,7 @@ on boot
     chown root root /system/bin/pppd;
     chmod 755 /system/etc/ppp/*
     chmod 4755 /system/bin/pppd
- 
+  
     if [ -f /system/ppp ]
     then
       # PPP enabled, doing PPP specific stuff
@@ -127,7 +207,6 @@ on boot
       write /proc/sys/vm/lowmem_reserve_ratio 8 8
       write /proc/sys/vm/min_free_kbytes 8192
     fi
-
  
 service hciattach /system/bin/brcm_patchram_plus --enable_hci \
      --baudrate 3000000 --patchram /etc/firmware/bcm4329.hcd /dev/ttyHS0
