@@ -102,4 +102,4 @@ BOARD_VENDOR_QCOM_GPS_LOC_API_HARDWARE := leo
 BOARD_VENDOR_QCOM_GPS_LOC_API_AMSS_VERSION := 3200
 
 TARGET_PREBUILT_RECOVERY_KERNEL := device/htc/leo/prebuilt/recovery_kernel
-TARGET_RECOVERY_INITRC := device/htc/leo/prebuilt/recovery/init.htc.rc
+-include device/htc/7x30-recovery/BoardConfigCommon.mk

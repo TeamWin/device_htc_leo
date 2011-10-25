@@ -88,14 +88,6 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     vendor/cyanogen/prebuilt/common/etc/apns-conf.xml:system/etc/apns-conf.xml
 
-# recovery utilities
-PRODUCT_COPY_FILES += \
-    device/htc/leo/prebuilt/recovery/choice_fn:recovery/root/sbin/choice_fn \
-    device/htc/leo/prebuilt/recovery/detect_key:recovery/root/sbin/detect_key \
-    device/htc/leo/prebuilt/recovery/htcbatt:recovery/root/sbin/htcbatt \
-    device/htc/leo/prebuilt/recovery/offmode_charging:recovery/root/sbin/offmode_charging \
-    device/htc/leo/prebuilt/recovery/power_test:recovery/root/sbin/power_test
-
 # kernel modules
 PRODUCT_COPY_FILES += \
     device/htc/leo/prebuilt/modules/bcm4329.ko:system/lib/modules/bcm4329.ko \
