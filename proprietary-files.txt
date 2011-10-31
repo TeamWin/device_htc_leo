@@ -25,7 +25,6 @@ lib/liboemcamera.so
 lib/libOmxVdec.so
 lib/libOmxVidEnc.so
 lib/libOmxCore.so
-lib/libmm-omxcore.so
 lib/hw/gps.htcleo.so
 lib/hw/gps.leo.so
 lib/hw/sensors.bravo.so
