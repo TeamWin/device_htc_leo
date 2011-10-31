@@ -26,7 +26,7 @@ for FILE in `cat proprietary-files.txt | grep -v ^# | grep -v ^$`; do
     if [ ! -d $BASE/$DIR ]; then
         mkdir -p $BASE/$DIR
     fi
-    unzip -j -o ../../../${DEVICE}_update.zip system/$FILE -d $BASE
+    unzip -j -o ../../../${DEVICE}_update.zip system/$FILE -d $BASE/$DIR
 done
 
 ./setup-makefiles.sh

@@ -41,7 +41,7 @@ for FILE in `cat proprietary-files.txt | grep -v ^# | grep -v ^$`; do
     if [ ! -d $BASE/$DIR ]; then
         mkdir -p $BASE/$DIR
     fi
-    cp $STAGESYS/$FILE -d $BASE
+    cp $STAGESYS/$FILE $BASE/$FILE
 done
 
 ./setup-makefiles.sh
